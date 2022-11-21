@@ -628,27 +628,40 @@ async function getPoolState() {
 /*** ADD LIQUIDITY ***/
 async function addLiquidity(amountEth, maxSlippagePct) {
   state = await getPoolState();
+  max_exchange_rate = state.token_eth_rate * (1 + maxSlippagePct / 100) * 1000; //multiply by 1000 to prevent underflow
+  min_exchange_rate = state.token_eth_rate * (1 - maxSlippagePct / 100) * 1000;
+
   await token_contract.connect(provider.getSigner(defaultAccount)).approve(exchange_address, Math.ceil(state.token_eth_rate * amountEth * 2));
-  await exchange_contract.connect(provider.getSigner(defaultAccount)).addLiquidity(0, 0, { value: ethers.utils.parseUnits(amountEth, "wei")});
+  await exchange_contract.connect(provider.getSigner(defaultAccount)).addLiquidity(Math.ceil(max_exchange_rate), Math.ceil(min_exchange_rate), { value: ethers.utils.parseUnits(amountEth.toString(), "wei")});
 }
 
 /*** REMOVE LIQUIDITY ***/
 async function removeLiquidity(amountEth, maxSlippagePct) {
-  await exchange_contract.connect(provider.getSigner(defaultAccount)).removeLiquidity(amountEth, 0, 0);
+  state = await getPoolState();
+  max_exchange_rate = state.token_eth_rate * (1 + maxSlippagePct / 100) * 1000;
+  min_exchange_rate = state.token_eth_rate * (1 - maxSlippagePct / 100) * 1000;
+
+  await exchange_contract.connect(provider.getSigner(defaultAccount)).removeLiquidity(amountEth, Math.ceil(max_exchange_rate), Math.ceil(min_exchange_rate));
 }
 
 async function removeAllLiquidity(maxSlippagePct) {
-  await exchange_contract.connect(provider.getSigner(defaultAccount)).removeAllLiquidity(0, 0);
+  await exchange_contract.connect(provider.getSigner(defaultAccount)).removeAllLiquidity(Math.ceil(max_exchange_rate), Math.ceil(min_exchange_rate));
 }
 
 /*** SWAP ***/
 async function swapTokensForETH(amountToken, maxSlippagePct) {
+  state = await getPoolState();
+  max_exchange_rate = state.eth_token_rate * (1 + maxSlippagePct / 100) * 1000;
+
   await token_contract.connect(provider.getSigner(defaultAccount)).approve(exchange_address, amountToken * 2);
-  await exchange_contract.connect(provider.getSigner(defaultAccount)).swapTokensForETH(amountToken, 0);   
+  await exchange_contract.connect(provider.getSigner(defaultAccount)).swapTokensForETH(amountToken, Math.ceil(max_exchange_rate));   
 }
 
 async function swapETHForTokens(amountEth, maxSlippagePct) {
-  await exchange_contract.connect(provider.getSigner(defaultAccount)).swapETHForTokens(0, {value: ethers.utils.parseUnits(amountEth, "wei")});   
+  state = await getPoolState();
+  max_exchange_rate = state.token_eth_rate * (1 + maxSlippagePct / 100) * 1000;
+
+  await exchange_contract.connect(provider.getSigner(defaultAccount)).swapETHForTokens(Math.ceil(max_exchange_rate), {value: ethers.utils.parseUnits(amountEth.toString(), "wei")});   
 }
 
 // =============================================================================
@@ -873,6 +886,6 @@ const sanityCheck = async function() {
 // Sleep 3s to ensure init() finishes before sanityCheck() runs on first load.
 // If you run into sanityCheck() errors due to init() not finishing, please extend the sleep time.
 
-// setTimeout(function () {
-//   sanityCheck();
-// }, 3000);
+setTimeout(function () {
+  sanityCheck();
+}, 3000);

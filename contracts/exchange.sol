@@ -83,10 +83,11 @@ contract TokenExchange is Ownable {
         external 
         payable
     {
-        uint exchange_rate = 1000 * token_reserves / eth_reserves; //y/x
+        uint exchange_rate = 1000 * token_reserves / eth_reserves; //y/x, price of ETH in terms of token
+        require(exchange_rate <= max_exchange_rate);
+        require(exchange_rate >= min_exchange_rate);
+
         uint tokenAmount = msg.value * exchange_rate / 1000; 
-        console.log(token.balanceOf(msg.sender));
-        console.log(tokenAmount);
         require(token.balanceOf(msg.sender) >= tokenAmount);
         token.transferFrom(msg.sender, address(this), tokenAmount);
         eth_reserves += msg.value;
@@ -114,12 +115,13 @@ contract TokenExchange is Ownable {
         public 
         payable
     {   
-        console.log(lps[msg.sender]);
-        console.log("initial ETH", address(this).balance);
-        console.log(amountETH);
         require(amountETH < eth_reserves);
         require(amountETH * 1000 <= lps[msg.sender] * eth_reserves);
-        uint exchange_rate = 1000 * token_reserves / eth_reserves; //y/x
+
+        uint exchange_rate = 1000 * token_reserves / eth_reserves; //y/x, price of ETH in terms of token
+        require(exchange_rate <= max_exchange_rate);
+        require(exchange_rate >= min_exchange_rate);
+
         uint tokenAmount = amountETH * exchange_rate / 1000; 
         require(tokenAmount < token_reserves);
         require(tokenAmount * 1000 <= lps[msg.sender] * token_reserves);
@@ -137,16 +139,11 @@ contract TokenExchange is Ownable {
             }
         }
         
-        console.log(lps[msg.sender]);
-        console.log(token_reserves);
-        console.log(tokenAmount);
         lps[msg.sender] = (lps[msg.sender] * (token_reserves + tokenAmount) - tokenAmount * 1000) / token_reserves;
         k = address(this).balance * token.balanceOf(address(this));
         if (lps[msg.sender] == 0) {
             removeLP(callerIndex);
         }
-
-        console.log("final ETH", address(this).balance);
     }
 
     // Function removeAllLiquidity: Removes all liquidity that msg.sender is entitled to withdraw
@@ -169,7 +166,9 @@ contract TokenExchange is Ownable {
         external 
         payable
     {
-        uint exchange_rate = 1000 * eth_reserves / token_reserves; //x/y, price of Token in terms of ETH
+        require(1000 * token_reserves / eth_reserves <= max_exchange_rate);
+
+        uint exchange_rate = 1000 * eth_reserves / token_reserves; //x/y, price of token in terms of ETH
         uint amountETH = amountTokens * exchange_rate / 1000;
         require(token.balanceOf(msg.sender) >= amountTokens);
         require(amountETH < eth_reserves);
@@ -188,7 +187,9 @@ contract TokenExchange is Ownable {
         external
         payable 
     {
-        uint exchange_rate = 1000 * token_reserves / eth_reserves; //y/x
+        require(1000 * eth_reserves / token_reserves <= max_exchange_rate);
+
+        uint exchange_rate = 1000 * token_reserves / eth_reserves; //y/x, price of ETH in terms of token
         uint amountTokens = msg.value * exchange_rate / 1000;
         require(amountTokens < token_reserves);
         token.transfer(msg.sender, amountTokens);
