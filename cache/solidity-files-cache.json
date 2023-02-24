@@ -37,8 +37,8 @@
       ]
     },
     "/Users/Apple/Downloads/proj4/contracts/exchange.sol": {
-      "lastModificationDate": 1669014315898,
-      "contentHash": "a793d0ad1b96bec23adddfbcdc85c559",
+      "lastModificationDate": 1669062634121,
+      "contentHash": "3898633584ddcd47c78af9f59d28e3b1",
       "sourceName": "contracts/exchange.sol",
       "solcConfig": {
         "version": "0.8.17",

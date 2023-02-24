@@ -22,8 +22,8 @@ contract TokenExchange is Ownable {
     address[] private lp_providers;                     
 
     // liquidity rewards
-    uint private swap_fee_numerator = 0;                // TODO Part 5: Set liquidity providers' returns.
-    uint private swap_fee_denominator = 0;
+    uint private swap_fee_numerator = 5;                // TODO Part 5: Set liquidity providers' returns.
+    uint private swap_fee_denominator = 100;
 
     // Constant: x * y = k
     uint private k;
@@ -169,7 +169,7 @@ contract TokenExchange is Ownable {
         require(1000 * token_reserves / eth_reserves <= max_exchange_rate);
 
         uint exchange_rate = 1000 * eth_reserves / token_reserves; //x/y, price of token in terms of ETH
-        uint amountETH = amountTokens * exchange_rate / 1000;
+        uint amountETH = amountTokens * exchange_rate / 1000 * (swap_fee_denominator - swap_fee_numerator) / swap_fee_denominator;
         require(token.balanceOf(msg.sender) >= amountTokens);
         require(amountETH < eth_reserves);
         payable(msg.sender).transfer(amountETH);
@@ -190,7 +190,7 @@ contract TokenExchange is Ownable {
         require(1000 * eth_reserves / token_reserves <= max_exchange_rate);
 
         uint exchange_rate = 1000 * token_reserves / eth_reserves; //y/x, price of ETH in terms of token
-        uint amountTokens = msg.value * exchange_rate / 1000;
+        uint amountTokens = msg.value * exchange_rate / 1000 * (swap_fee_denominator - swap_fee_numerator) / swap_fee_denominator;
         require(amountTokens < token_reserves);
         token.transfer(msg.sender, amountTokens);
         eth_reserves += msg.value;
